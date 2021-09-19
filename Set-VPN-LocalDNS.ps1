@@ -62,7 +62,7 @@ param (
 
 ### INCLUDES ####################
 
-.$PSScriptRoot\EL-PS-Common.psm1
+. $PSScriptRoot\EL-PS-Common.psm1
 
 #################################
 
