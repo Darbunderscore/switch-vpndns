@@ -62,7 +62,7 @@ param (
 
 ### INCLUDES ####################
 
-. $PSScriptRoot\EL-PS-Common.psm1
+Import-Module $PSScriptRoot\EL-PS-Common.psm1
 
 #################################
 
@@ -71,14 +71,30 @@ if (!(Test-Admin))  {
     Write-Warning "Script ran with non-elevated privleges."
     if (!$elevated) 
     {
-         write-host "INFO: Attempting script restart in elevated mode..."
-        Start-Process powershell.exe -Verb RunAs -ArgumentList ('-noprofile -noexit -file "{0}" -elevated' -f ($myinvocation.MyCommand.Definition))
+        write-host "INFO: Attempting script restart in elevated mode..."
+        $AllParameters_String = "";
+        ForEach ($Parameter in $PSBoundParameters.GetEnumerator()){
+            $Parameter_Key = $Parameter.Key;
+            $Parameter_Value = $Parameter.Value;
+            $Parameter_Value_Type = $Parameter_Value.GetType().Name;
+    
+            If ($Parameter_Value_Type -Eq "SwitchParameter"){
+                $AllParameters_String += " -$Parameter_Key";
+            } Else {
+                $AllParameters_String += " -$Parameter_Key `"$Parameter_Value`"";
+            }
+        }
+    
+        $Arguments= @("-NoProfile","-NoExit","-File",$PSCommandPath,"-elevated",$AllParameters_String)
+    
+        Start-Process PowerShell -Verb Runas -ArgumentList $Arguments
+        exit
     } 
     # tried to elevate, did not work, aborting
     write-error -Message "Could not elevate privleges. Please restart Powershell in elevated mode before running this script." -ErrorId 99 -TargetObject $_ -ErrorAction Stop
 }
 
-write-host "INFO: Running script in elevated mode."
+else { write-host "INFO: Running script in elevated mode." }
 
 ##### MAIN #####
 
