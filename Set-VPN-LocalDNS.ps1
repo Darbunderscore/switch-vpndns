@@ -69,3 +69,5 @@ while ((Get-NetIPInterface -InterfaceAlias $VPN_if).connectionstate -eq "Connect
     Invoke-Command -ScriptBlock { ipconfig /flushdns >> $null }
     start-sleep -seconds $Interval
 }
+Write-Host "VPN is no longer connected, script exiting..."
+[system.media.systemsounds]::Exclamation.play()
