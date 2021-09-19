@@ -31,8 +31,10 @@ Usage:  Set LAN_if to your Wired or Wifi local network interface alias. Set VPN_
         Optionally specify a recheck interval (in seconds), otherwise the default is 60 seconds.
         To release IPv6 DHCP values (to force DNS over IPv4), specify the -DisableIPv6 switch.
         
-
+#Requires -Module EL-PS-Common
 #>
+
+
 
 <# 
 
@@ -53,8 +55,32 @@ param (
     [switch]
     $DisableIPv6,
     [int16]
-    $Interval= 60
+    $Interval= 60,
+    [switch]
+    $Elevated
 )
+
+### INCLUDES ####################
+
+.$PSScriptRoot\EL-PS-Common.psm1
+
+#################################
+
+# Check that script is running with elevated access
+if (!(Test-Admin))  {
+    Write-Warning "Script ran with non-elevated privleges."
+    if (!$elevated) 
+    {
+         write-host "INFO: Attempting script restart in elevated mode..."
+        Start-Process powershell.exe -Verb RunAs -ArgumentList ('-noprofile -noexit -file "{0}" -elevated' -f ($myinvocation.MyCommand.Definition))
+    } 
+    # tried to elevate, did not work, aborting
+    write-error -Message "Could not elevate privleges. Please restart Powershell in elevated mode before running this script." -ErrorId 99 -TargetObject $_ -ErrorAction Stop
+}
+
+write-host "INFO: Running script in elevated mode."
+
+##### MAIN #####
 
 while ((Get-NetIPInterface -InterfaceAlias $VPN_if).connectionstate -eq "Connected"){
     write-host "Checking Interface Metric of $VPN_if..."
