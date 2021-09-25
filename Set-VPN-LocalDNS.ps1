@@ -9,13 +9,21 @@
 
 .COMPANYNAME 
 
-.COPYRIGHT (c) 2021 Brad Eley. All rights reserved.
+.COPYRIGHT (c) 2021 Brad Eley (brad.eley@gmail.com)
+This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 .TAGS 
 
-.LICENSEURI 
+.LICENSEURI https://www.gnu.org/licenses/
 
-.PROJECTURI 
+.PROJECTURI https://github.com/Darbunderscore/switch-vpndns
 
 .ICONURI 
 
@@ -54,7 +62,7 @@ param (
     $Metric= 10,
     [switch]
     $DisableIPv6,
-    [int16]
+    [int]
     $Interval= 60,
     [switch]
     $Elevated
@@ -71,7 +79,7 @@ if (!(Test-Admin))  {
     Write-Warning "Script ran with non-elevated privleges."
     if (!$elevated) 
     {
-        write-host "INFO: Attempting script restart in elevated mode..."
+        write-output "INFO: Attempting script restart in elevated mode..."
         $AllParameters_String = "";
         ForEach ($Parameter in $PSBoundParameters.GetEnumerator()){
             $Parameter_Key = $Parameter.Key;
@@ -94,14 +102,14 @@ if (!(Test-Admin))  {
     write-error -Message "Could not elevate privleges. Please restart Powershell in elevated mode before running this script." -ErrorId 99 -TargetObject $_ -ErrorAction Stop
 }
 
-else { write-host "INFO: Running script in elevated mode." }
+else { Write-Output "INFO: Running script in elevated mode." }
 
 ##### MAIN #####
 
 while ((Get-NetIPInterface -InterfaceAlias $VPN_if).connectionstate -eq "Connected"){
-    write-host "Checking Interface Metric of $VPN_if..."
+    write-output "Checking Interface Metric of $VPN_if..."
     if ((Get-NetIPInterface -InterfaceAlias $VPN_if).InterfaceMetric -ne $Metric){
-        write-host "Interface Metric out of scope. Resetting..."
+        write-output "Interface Metric out of scope. Resetting..."
         Set-NetIPInterface -InterfaceAlias $VPN_if -InterfaceMetric $Metric
     }
     if ((Get-NetIPInterface -InterfaceAlias $LAN_if).InterfaceMetric -ne 1){ 
@@ -111,5 +119,5 @@ while ((Get-NetIPInterface -InterfaceAlias $VPN_if).connectionstate -eq "Connect
     Invoke-Command -ScriptBlock { ipconfig /flushdns >> $null }
     start-sleep -seconds $Interval
 }
-Write-Host "VPN is no longer connected, script exiting..."
+Write-Output "VPN is no longer connected, script exiting..."
 [system.media.systemsounds]::Exclamation.play()
