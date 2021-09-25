@@ -70,7 +70,7 @@ param (
 
 ### INCLUDES ####################
 
-Import-Module $PSScriptRoot\EL-PS-Common.psm1
+Import-Module $PSScriptRoot\PSModules\EL-PS-Common.psm1
 
 #################################
 
