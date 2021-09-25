@@ -1,1 +1,1 @@
-# switch-vnsdns
+# switch-vpndns
