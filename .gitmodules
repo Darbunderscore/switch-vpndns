@@ -1,0 +1,3 @@
+[submodule "PSModules"]
+	path = PSModules
+	url = https://github.com/Darbunderscore/PSModules
