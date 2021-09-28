@@ -153,7 +153,7 @@ If (($LAN.status -ne "Up") -or ($VPN.status -ne "Up")){ Write-Error -Message "FA
 
 ##### MAIN #####
 
-while ($($VPN | Get-NetIPInterface -PolicyStore ActiveStore).connectionstate -eq "connected"){
+while (($VPN | Get-NetIPInterface -PolicyStore ActiveStore).connectionstate -eq "connected"){
     write-output ("Checking Interface Metric of {0}..." -f $VPN.Name)
     if ((Get-NetIPInterface -InterfaceAlias $VPN.InterfaceAlias).InterfaceMetric -ne $Metric){
         write-output "Interface Metric out of scope. Resetting..."
