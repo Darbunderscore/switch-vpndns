@@ -1,7 +1,7 @@
 
 <#PSScriptInfo
 
-.VERSION 1.2.0
+.VERSION 1.2.1
 
 .GUID c07f0f7f-8ef5-48c1-92ed-a2bd6cf5c1ed
 
@@ -42,6 +42,8 @@ v1.2.0
     Added validation checks for interfaces
     Added ability to reference LAN and VPN interfaces by alias or index.
     Rewrote check for elevated state to use new function.
+v1.2.1
+    Bugfix: Script erroneously detects LAN and VPN interfaces as not up.
 
 USAGE:
 Switch-VPNDNS -LAN <LAN_Interface_Alias> -VPN <VPN_Interface_Alias> [-Metric [integer]] [-Interval [integer]] [-DisableIPv6]
@@ -130,22 +132,22 @@ Else { Write-Output "INFO: Running script in elevated mode." }
 If ($LAN) {
     Try{ $LAN_tmp= Get-NetAdapter $LAN }
     Catch { Write-Error -Message "FATAL: Could not find network interface $LAN."  -ErrorID 90 -TargetObject $_ -ErrorAction Stop }
-    $LAN = $LAN_tmp
+    [CimInstance]$LAN = $LAN_tmp
 }
 Elseif ($LAN_if){
     Try { $LAN_tmp= Get-NetAdapter -InterfaceIndex $LAN_if}
     Catch { Write-Error -Message "FATAL: Could not find network interface with interface index $LAN_if."  -ErrorID 90 -TargetObject $_ -ErrorAction Stop }
-    $LAN = $LAN_tmp
+    [CimInstance]$LAN = $LAN_tmp
 }
 If ($VPN) {
     Try{ $VPN_tmp= Get-NetAdapter $VPN }
     Catch { Write-Error -Message "FATAL: Could not find network interface $VPN."  -ErrorID 90 -TargetObject $_ -ErrorAction Stop }
-    $VPN = $VPN_tmp
+    [CimInstance]$VPN = $VPN_tmp
 }
 Elseif ($VPN_if){
     Try { $VPN_tmp= Get-NetAdapter -InterfaceIndex $VPN_if}
     Catch { Write-Error -Message "FATAL: Could not find network interface with interface index $VPN_if."  -ErrorID 90 -TargetObject $_ -ErrorAction Stop }
-    $VPN = $VPN_tmp
+    [CimInstance]$VPN = $VPN_tmp
 }
 # 2. Interfaces identical?
 If ($LAN -eq $VPN) { Write-Error -Message "FATAL: LAN and VPN interfaces cannot be identical." -ErrorID 98  -TargetObject $_ -ErrorAction Stop}
