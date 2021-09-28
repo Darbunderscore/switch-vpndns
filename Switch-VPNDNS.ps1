@@ -41,12 +41,13 @@ v1.1.0
 v1.2.0
     Added validation checks for interfaces
     Added ability to reference LAN and VPN interfaces by alias or index.
+    Rewrote check for elevated state to use new function.
 
 USAGE:
 Switch-VPNDNS -LAN <LAN_Interface_Alias> -VPN <VPN_Interface_Alias> [-Metric [integer]] [-Interval [integer]] [-DisableIPv6]
 Switch-VPNDNS -LAN <LAN_Interface_Alias> -VPN_if <VPN_Interface_Index> [-Metric [integer]] [-Interval [integer]] [-DisableIPv6]
 Switch-VPNDNS -LAN_if <LAN_Interface_Index> -VPN <VPN_Interface_Alias> [-Metric [integer]] [-Interval [integer]] [-DisableIPv6]
-Switch-VPNDNS -LAN_if <LAN_Interface_Index> -VPN_if <VPN_Interface_Alias> [-Metric [integer]] [-Interval [integer]] [-DisableIPv6]
+Switch-VPNDNS -LAN_if <LAN_Interface_Index> -VPN_if <VPN_Interface_Index> [-Metric [integer]] [-Interval [integer]] [-DisableIPv6]
 
 (Required) -LAN OR -LAN_if: Set -LAN to the local network interface alias OR -LAN_if to the the local network interface index.
 (Required) -VPN OR -VPN_if: Set -VPN to the VPN interface alias OR -VPN_if to the VPN interface index.
