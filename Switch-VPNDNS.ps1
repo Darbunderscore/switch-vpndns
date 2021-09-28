@@ -113,35 +113,16 @@ Import-Module $PSScriptRoot\PSModules\EL-PS-Common.psm1
 
 $ErrorActionPreference= "Stop"
 
-# Check that script is running with elevated access
-if (!(Test-Admin))  {
-    Write-Warning "Script ran with non-elevated privleges."
-    if (!$elevated) 
-    {
-        write-output "INFO: Attempting script restart in elevated mode..."
-        $AllParameters_String = "";
-        ForEach ($Parameter in $PSBoundParameters.GetEnumerator()){
-            $Parameter_Key = $Parameter.Key;
-            $Parameter_Value = $Parameter.Value;
-            $Parameter_Value_Type = $Parameter_Value.GetType().Name;
-    
-            If ($Parameter_Value_Type -Eq "SwitchParameter"){
-                $AllParameters_String += " -$Parameter_Key";
-            } Else {
-                $AllParameters_String += " -$Parameter_Key `"$Parameter_Value`"";
-            }
-        }
-    
-        $Arguments= @("-NoProfile","-NoExit","-File",$PSCommandPath,"-elevated",$AllParameters_String)
-    
-        Start-Process PowerShell -Verb Runas -ArgumentList $Arguments
-        exit
-    } 
-    # tried to elevate, did not work, aborting
-    write-error -Message "FATAL: Could not elevate privleges. Please restart Powershell in elevated mode before running this script." -ErrorId 99 -TargetObject $_ -ErrorAction Stop
+# Check that script is running with elevated access:
+If (!(Test-Admin) -and $elevated){
+    Write-Error -Message "Could not elevate privleges. Please restart PowerShell in elevated mode before running this script." -ErrorId 99 -TargetObject $_ -ErrorAction Stop
 }
-
-else { Write-Output "INFO: Running script in elevated mode." }
+Elseif (!(Test-Admin)){
+    Write-Warning "Script ran with non-elevated privleges."
+    Restart-ScriptElevated -ScriptArgs $PSBoundParameters -PSPath $PSCommandPath
+    exit
+}
+Else { Write-Output "INFO: Running script in elevated mode." }
 
 # Validate Interfaces
 # 1. Interfaces exist?
