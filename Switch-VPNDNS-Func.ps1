@@ -22,7 +22,7 @@ Function Invoke-Switch {
         $LAN,
         $VPN,
         $Metric,
-        $DisableIPv6,
+        [switch]$DisableIPv6,
         $Interval
     )
     While ((Get-NetIPInterface -InterfaceAlias $VPN.InterfaceAlias).ConnectionState -eq "Connected"){
