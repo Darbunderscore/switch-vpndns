@@ -1,7 +1,7 @@
 
 <#PSScriptInfo
 
-.VERSION 1.2.1
+.VERSION 1.3.0
 
 .GUID c07f0f7f-8ef5-48c1-92ed-a2bd6cf5c1ed
 
@@ -44,6 +44,10 @@ v1.2.0
     Rewrote check for elevated state to use new function.
 v1.2.1
     Bugfix: Script erroneously detects LAN and VPN interfaces as not up.
+V1.3.0
+    Created function for retreiving adapter info and running validation tests.
+    Created function for running main loop
+    Created Pester tests
 
 USAGE:
 Switch-VPNDNS -LAN <LAN_Interface_Alias> -VPN <VPN_Interface_Alias> [-Metric [integer]] [-Interval [integer]] [-DisableIPv6]
@@ -58,6 +62,8 @@ Switch-VPNDNS -LAN_if <LAN_Interface_Index> -VPN_if <VPN_Interface_Index> [-Metr
 (Optional) -DisableIPv6: Release IPv6 DHCP values (to force DNS over IPv4).
         
 #>
+
+#Requires -Module EL-PS-Common
 
 <# 
 
@@ -107,67 +113,39 @@ param (
     [switch]
         $Elevated
 )
+Begin {
+##### INCLUDES #############################
+    Import-Module EL-PS-Common
+    . $PSScriptRoot\Switch-VPNDNS-Func.ps1
+############################################
+    $ErrorActionPreference= "Stop"
 
-### INCLUDES ####################
-
-Import-Module $PSScriptRoot\PSModules\EL-PS-Common.psm1
-
-#################################
-
-$ErrorActionPreference= "Stop"
-
-# Check that script is running with elevated access:
-If (!(Test-Admin) -and $elevated){
-    Write-Error -Message "Could not elevate privleges. Please restart PowerShell in elevated mode before running this script." -ErrorId 99 -TargetObject $_ -ErrorAction Stop
-}
-Elseif (!(Test-Admin)){
-    Write-Warning "Script ran with non-elevated privleges."
-    Restart-ScriptElevated -ScriptArgs $PSBoundParameters -PSPath $PSCommandPath
-    exit
-}
-Else { Write-Output "INFO: Running script in elevated mode." }
-
-# Validate Interfaces
-# 1. Interfaces exist?
-If ($LAN) {
-    Try{ $LAN_tmp= Get-NetAdapter $LAN }
-    Catch { Write-Error -Message "FATAL: Could not find network interface $LAN."  -ErrorID 90 -TargetObject $_ -ErrorAction Stop }
-    [CimInstance]$LAN = $LAN_tmp
-}
-Elseif ($LAN_if){
-    Try { $LAN_tmp= Get-NetAdapter -InterfaceIndex $LAN_if}
-    Catch { Write-Error -Message "FATAL: Could not find network interface with interface index $LAN_if."  -ErrorID 90 -TargetObject $_ -ErrorAction Stop }
-    [CimInstance]$LAN = $LAN_tmp
-}
-If ($VPN) {
-    Try{ $VPN_tmp= Get-NetAdapter $VPN }
-    Catch { Write-Error -Message "FATAL: Could not find network interface $VPN."  -ErrorID 90 -TargetObject $_ -ErrorAction Stop }
-    [CimInstance]$VPN = $VPN_tmp
-}
-Elseif ($VPN_if){
-    Try { $VPN_tmp= Get-NetAdapter -InterfaceIndex $VPN_if}
-    Catch { Write-Error -Message "FATAL: Could not find network interface with interface index $VPN_if."  -ErrorID 90 -TargetObject $_ -ErrorAction Stop }
-    [CimInstance]$VPN = $VPN_tmp
-}
-# 2. Interfaces identical?
-If ($LAN -eq $VPN) { Write-Error -Message "FATAL: LAN and VPN interfaces cannot be identical." -ErrorID 98  -TargetObject $_ -ErrorAction Stop}
-# 3. Inferfaces connected?
-If (($LAN.status -ne "Up") -or ($VPN.status -ne "Up")){ Write-Error -Message "FATAL: LAN and/or VPN interface(s) not connected."  -ErrorID 97 -TargetObject $_ -ErrorAction Stop }
-
-##### MAIN #####
-
-while (($VPN | Get-NetIPInterface -PolicyStore ActiveStore).connectionstate -eq "connected"){
-    write-output ("Checking Interface Metric of {0}..." -f $VPN.Name)
-    if ((Get-NetIPInterface -InterfaceAlias $VPN.InterfaceAlias).InterfaceMetric -ne $Metric){
-        write-output "Interface Metric out of scope. Resetting..."
-        Set-NetIPInterface -InterfaceAlias $VPN.InterfaceAlias -InterfaceMetric $Metric
+    # Check that script is running with elevated access:
+    If (!(Test-Admin) -and $elevated){
+        Write-Error -Message "FATAL: Could not elevate privleges. Please restart PowerShell in elevated mode before running this script." -ErrorId 99 -TargetObject $_ -ErrorAction Stop
     }
-    if ((Get-NetIPInterface -InterfaceAlias $LAN.InterfaceAlias).InterfaceMetric -ne 1){ 
-        Set-NetIPInterface -InterfaceAlias $LAN.InterfaceAlias -InterfaceMetric 1
+    Elseif (!(Test-Admin)){
+        Write-Warning "Script ran with non-elevated privleges."
+        Restart-ScriptElevated -ScriptArgs $PSBoundParameters -PSPath $PSCommandPath
+        exit
     }
-    if ($DisableIPv6){ invoke-command -ScriptBlock { ipconfig /release6 >> $null } }
-    Invoke-Command -ScriptBlock { ipconfig /flushdns >> $null }
-    start-sleep -seconds $Interval
+    Else { Write-Output "INFO: Running script in elevated mode." }
 }
-Write-Output "VPN is no longer connected, script exiting..."
-[system.media.systemsounds]::Exclamation.play()
+Process {
+
+    Try { Initialize-NetAdapters -ScriptArgs $PSBoundParameters }
+    Catch {
+        # Incomplete
+    }
+
+    If ($DisableIPv6){
+        Invoke-SwitchVPNDNS -LAN $Global:LAN -VPN $Global:VPN -Metric $Global:Metric -Interval $Interval -DisableIPv6
+    }
+    Else {
+        Invoke-SwitchVPNDNS -LAN $Global:LAN -VPN $Global:VPN -Metric $Global:Metric -Interval $Interval
+    }
+}
+End {
+
+    Write-Output "Script exiting..."    
+}
