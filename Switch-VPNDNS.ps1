@@ -63,6 +63,8 @@ Switch-VPNDNS -LAN_if <LAN_Interface_Index> -VPN_if <VPN_Interface_Index> [-Metr
         
 #>
 
+#Requires -Module EL-PS-Common
+
 <# 
 
 .DESCRIPTION 
@@ -111,37 +113,39 @@ param (
     [switch]
         $Elevated
 )
+Begin {
+##### INCLUDES #############################
+    Import-Module EL-PS-Common
+    . $PSScriptRoot\Switch-VPNDNS-Func.ps1
+############################################
+    $ErrorActionPreference= "Stop"
 
-##### INCLUDES ##################
-
-Import-Module $PSScriptRoot\PSModules\EL-PS-Common.psm1
-. $PSScriptRoot\Switch-VPNDNS-Func.ps1
-
-##### BEFORE ####################
-
-$ErrorActionPreference= "Stop"
-
-# Check that script is running with elevated access:
-If (!(Test-Admin) -and $elevated){
-    Write-Error -Message "FATAL: Could not elevate privleges. Please restart PowerShell in elevated mode before running this script." -ErrorId 99 -TargetObject $_ -ErrorAction Stop
+    # Check that script is running with elevated access:
+    If (!(Test-Admin) -and $elevated){
+        Write-Error -Message "FATAL: Could not elevate privleges. Please restart PowerShell in elevated mode before running this script." -ErrorId 99 -TargetObject $_ -ErrorAction Stop
+    }
+    Elseif (!(Test-Admin)){
+        Write-Warning "Script ran with non-elevated privleges."
+        Restart-ScriptElevated -ScriptArgs $PSBoundParameters -PSPath $PSCommandPath
+        exit
+    }
+    Else { Write-Output "INFO: Running script in elevated mode." }
 }
-Elseif (!(Test-Admin)){
-    Write-Warning "Script ran with non-elevated privleges."
-    Restart-ScriptElevated -ScriptArgs $PSBoundParameters -PSPath $PSCommandPath
-    exit
+Process {
+
+    Try { Initialize-NetAdapters -ScriptArgs $PSBoundParameters }
+    Catch {
+        # Incomplete
+    }
+
+    If ($DisableIPv6){
+        Invoke-SwitchVPNDNS -LAN $Global:LAN -VPN $Global:VPN -Metric $Global:Metric -Interval $Interval -DisableIPv6
+    }
+    Else {
+        Invoke-SwitchVPNDNS -LAN $Global:LAN -VPN $Global:VPN -Metric $Global:Metric -Interval $Interval
+    }
 }
-Else { Write-Output "INFO: Running script in elevated mode." }
+End {
 
-##### MAIN ######################
-
-Initialize-NetAdapters -ScriptArgs $PSBoundParameters
-
-If ($DisableIPv6){ Invoke-Switch -LAN $Global:LAN -VPN $Global:VPN -Metric $Global:Metric -Interval $Interval -DisableIPv6 }
-Else { Invoke-Switch -LAN $Global:LAN -VPN $Global:VPN -Metric $Global:Metric -Interval $Interval }
-
-##### END #######################
-
-Write-Output "VPN is no longer connected, script exiting..."
-[system.media.systemsounds]::Exclamation.play()
-
-##### SCRIPT END ################ 
+    Write-Output "Script exiting..."    
+}
