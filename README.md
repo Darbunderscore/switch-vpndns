@@ -15,3 +15,8 @@ Switch-VPNDNS **-LAN_if** *<LAN_Interface_Index>* **-VPN_if** *<VPN_Interface_In
 (Optional) -Metric: Specify an interface metric, default is 10.<br>
 (Optional) -Interval: Specify a recheck interval (in seconds), default is 60.<br>
 (Optional) -DisableIPv6: Release IPv6 DHCP values (to force DNS over IPv4).<br>
+
+### If Cloning Repo:
+This repository makes use of a submodule. After cloning, run the following commands to retrieve the files:<br>
+**git submodule init**<br>
+**git submodule update** 
